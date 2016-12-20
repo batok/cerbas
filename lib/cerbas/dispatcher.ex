@@ -94,8 +94,8 @@ defmodule Cerbas.Dispatcher do
   end
 
   def hello_world do 
-    hw = "hello world!"
-    hw |> color_info(:yellow)
+    "hello world!"
+    |> color_info(:yellow)
   end
 
   def func_with_arguments(foo) do
