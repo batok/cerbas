@@ -9,6 +9,10 @@ defmodule Cerbas.Web do
 
   @proxy_target_flask Application.get_env(:cerbas, :proxy_target_flask)
   @proxy_target_pyramid Application.get_env(:cerbas, :proxy_target_pyramid)
+  @proxy_target_ror Application.get_env(:cerbas, :proxy_target_ror)
+  @proxy_target_express Application.get_env(:cerbas, :proxy_target_express)
+  @proxy_target_django Application.get_env(:cerbas, :proxy_target_django)
+  @proxy_target_tornado Application.get_env(:cerbas, :proxy_target_tornado)
 
   defmacro r_json(j) do
     quote do
@@ -119,6 +123,7 @@ defmodule Cerbas.Web do
           "/api4/foo" -> :django
           "/api5/foo" -> :flask
           "/api6/foo" -> :expresss
+          "/api7/foo" -> :tornado
           _ -> nil
         end
         _ -> nil
@@ -209,10 +214,11 @@ defmodule Cerbas.Web do
   defp proxy_host(server_atom) do
     case server_atom do
       :pyramid -> @proxy_target_pyramid 
-      :ror -> nil
+      :ror -> @proxy_target_ror 
       :flask -> @proxy_target_flask
-      :django -> nil
-      :express -> nil
+      :django -> @proxy_target_django
+      :express -> @proxy_target_express
+      :tornado -> @proxy_target_tornado
     end |> color_info(:yellow)
   end
 
