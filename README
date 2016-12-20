@@ -223,13 +223,13 @@ CERBAS includes also a Plug process which can be used for any purposes or as a p
 To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
 github with hub [brew install hub]:
 
-$hub clone antirez/redis
-$cd redis
-$make
+$ hub clone antirez/redis
+$ cd redis
+$ make
 
 
 then run it:
-$src/redis-server
+$ src/redis-server
 
 To run the cerbastest.py example you need python 2.7 or + with redis and msgpack-python installed with pip ( I recommend using virtualenv for 2.7 or venv for python 3)
 
@@ -241,9 +241,9 @@ and erlang 19.1 installed with kerl without a hitch. You also need erlang instal
 
 Clone this repo, cd to cerbas and 
 
-$mix deps.get
+$ mix deps.get
 
-$mix run
+$ mix run
 
 Once running you can try the cerbastest.py or go to http://localhost:4455/api/hello
 
