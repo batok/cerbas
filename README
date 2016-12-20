@@ -220,19 +220,30 @@ CERBAS also includes a mechanism for dispatching functions by means of a CRON co
 CERBAS includes also a Plug process which can be used for any purposes or as a proxy ( WIP ) to other web servers like RoR, Django, Flask, Pyramid, Sinatra just to name a few.
 
 
- To run CERBAS you need redis.  To run the cerbastest.py example you need python 2.7 or + with redis and msgpack-python installed with pip ( I recommend using virtualenv for 2.7 or venv for python 3)
+To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
+github with hub [brew install hub]:
+
+$hub clone antirez/redis
+$cd redis
+$make
 
 
-CERBAS uses registry to handle elixir’s agents needed to work, therefore needs
+then run it:
+$src/redis-server
+
+To run the cerbastest.py example you need python 2.7 or + with redis and msgpack-python installed with pip ( I recommend using virtualenv for 2.7 or venv for python 3)
+
+
+CERBAS uses elixir's registry to handle elixir’s agents needed to work, therefore needs
 at least elixir 1.4-rc .  I have run CERBAS with master version ( 1.5-dev )
 and erlang 19.1 installed with kerl without a hitch. You also need erlang installed (v 18+).
 
 
 Clone this repo, cd to cerbas and 
 
-mix deps.get
+$mix deps.get
 
-mix run
+$mix run
 
 Once running you can try the cerbastest.py or go to http://localhost:4455/api/hello
 
