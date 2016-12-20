@@ -68,7 +68,7 @@ defmodule Cerbas.Web do
 
   def apicall(func, args, source, conn) do
     response = 
-    case Cerbas.dispatch({func, args, source}) do
+    case Cerbas.Dispatcher.dispatch({func, args, source}) do
       {:error, msg} -> %{status: "error", data: msg}
       val -> %{status: "ok", data: val}
       _ -> %{status: "error", data: ""}

@@ -24,7 +24,7 @@ use Mix.Config
      config :cerbas, proxy_target_pyramid: "http://127.0.0.1:6543"
      config :cerbas, delay_in_every_loop: 200
      config :cerbas, api_timeout: 5000
-     config :cerbas, api_valid_sources: ["cerbastest", "foo", "bar"]
+     config :cerbas, api_valid_sources: ["cerbastest", "foo", "bar", "web"]
      config :cerbas, api_valid_users: ["tom", "foo"]
 #     
 #
