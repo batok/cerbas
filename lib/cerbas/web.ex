@@ -15,6 +15,7 @@ defmodule Cerbas.Web do
   @proxy_target_express Application.get_env(:cerbas, :proxy_target_express)
   @proxy_target_django Application.get_env(:cerbas, :proxy_target_django)
   @proxy_target_tornado Application.get_env(:cerbas, :proxy_target_tornado)
+  @proxy_port Application.get_env(:cerbas, :proxy_port)
 
   defmacro r_json(j) do
     quote do
@@ -90,7 +91,7 @@ defmodule Cerbas.Web do
     :fuse.install(:fuse_server_timeout, {{:standard, 2, 3_000},{:reset, 10_000}})
     :fuse.install(:fuse_server_not_available, {{:standard, 2, 3_000},{:reset, 10_000}})
     "Web server and proxy started" |> color_info(:blue)
-    Plug.Adapters.Cowboy.http(__MODULE__, [], port: 4455)
+    Plug.Adapters.Cowboy.http(__MODULE__, [], port: @proxy_port)
   end
 
   def local_foo(conn) do
@@ -145,7 +146,7 @@ defmodule Cerbas.Web do
           "/api3/foo" -> :ror
           "/api4/foo" -> :django
           "/api5/foo" -> :flask
-          "/api6/foo" -> :expresss
+          "/api6/foo" -> :express
           "/api7/foo" -> :tornado
           _ -> nil
         end
@@ -166,7 +167,7 @@ defmodule Cerbas.Web do
   end
 
   defp proxy(conn, server_atom) do
-    "Proxying ... #{conn.request_path}" |> color_info(:yellow)
+    "Proxying ... #{conn.request_path} to #{inspect server_atom}" |> color_info(:yellow)
     case :fuse.ask(:fuse_server_timeout, :sync) do
       :blown -> error(conn, "Server Timeout", 500)
       _ -> case :fuse.ask(:fuse_server_not_available, :sync) do
@@ -212,7 +213,7 @@ defmodule Cerbas.Web do
 
   defp header_conversions(headers, backend \\ :pyramid) do
     case backend do
-      val when val in [:pyramid, :flask] -> 
+      val when val in [:pyramid, :flask, :tornado, :express] -> 
         headers = List.keydelete(headers, "Server", 0)
         headers = List.keydelete(headers, "Content-Length", 0)
         headers ++ 
@@ -239,7 +240,7 @@ defmodule Cerbas.Web do
     end
   end
 
-  defp proxy_host(server_atom) do
+  def proxy_host(server_atom) do
     case server_atom do
       :pyramid -> @proxy_target_pyramid 
       :ror -> @proxy_target_ror 
@@ -247,6 +248,7 @@ defmodule Cerbas.Web do
       :django -> @proxy_target_django
       :express -> @proxy_target_express
       :tornado -> @proxy_target_tornado
+      _ -> nil
     end |> color_info(:yellow)
   end
 

@@ -40,6 +40,7 @@ defmodule Cerbas.Dispatcher do
       :withargs -> {__MODULE__, :"func_with_arguments", "foo", false}
       :witherror -> {__MODULE__, :"func_with_error", nil, false}
       :sum -> {Cerbas.General, nil, "a b", false}
+      :proxiedhostport -> {Cerbas.General, :"get_proxied_host_port", "server", false}
       :slow -> {__MODULE__, :"func_slow", nil, false}
       :halt -> {__MODULE__, nil, "delay", true}
       _ -> {:nomatch, nil, nil, false}

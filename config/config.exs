@@ -22,6 +22,9 @@ use Mix.Config
      config :logger, :console, format: "\ncerbas $time $metadata[$level] $levelpad$message"
      config :cerbas, proxy_target_flask: "http://127.0.0.1:5000"
      config :cerbas, proxy_target_pyramid: "http://127.0.0.1:6543"
+     config :cerbas, proxy_target_tornado: "http://127.0.0.1:8888"
+     config :cerbas, proxy_target_express: "http://127.0.0.1:3000"
+     config :cerbas, proxy_port: 4455
      config :cerbas, delay_in_every_loop: 200
      config :cerbas, api_timeout: 5000
      config :cerbas, api_valid_sources: ["cerbastest", "foo", "bar", "web", "tom"]

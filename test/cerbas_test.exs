@@ -2,6 +2,16 @@ defmodule CerbasTest do
   use ExUnit.Case, async: true
   doctest Cerbas
 
+  def get_port() do
+    Application.get_env(:cerbas, :proxy_target_tornado)
+    |> String.split(":") 
+    |> List.last()
+    |> Integer.parse
+    |> elem(0)
+    rescue 
+      e -> 0
+  end
+
   test "hellox world" do
     assert(
      Cerbas.Dispatcher.dispatch({"hellox", "foo", "bar"})
@@ -55,6 +65,14 @@ defmodule CerbasTest do
      Cerbas.Dispatcher.dispatch({"sum", %{"a" => "x", "b" => 2}, "tom"})
      ==
      {:error, "bad arguments"}
+    )
+  end
+
+  test "function proxiedhostport" do
+    assert(
+     Cerbas.Dispatcher.dispatch({"proxiedhostport", %{"server" => "tornado"}, "tom"})
+     ==
+     get_port()
     )
   end
 
