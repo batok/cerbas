@@ -223,6 +223,21 @@ Once running you can try the cerbastest.py or go to http://localhost:4455/api/he
 
 The python client code will stop CERBAS calling the "halt" function via redis.
 
+There's a tornadoapp.py (python) which runs a tornado based wsgi app which gets it's
+port from calling the CERBAS api.  If you point your browser to
+http://localhost:4455/api7/foo?a=23&b=54  you get a response with the sum of a
+and b ( the app uses the CERBAS api to get the result ).  To run the tornado
+app you need a python environment with tornado installed ( via pip install
+tornado ) and redis ( via pip install redis ).
+
+There's also an express app.  You can run it with npm i and node
+espressapp.js.  Point your browser to http://localhost:4455/api6/foo and you
+get the response from node via the CERBAS prox
+
+There's also an express app.  You can run it with npm i and node
+espressapp.js.  Point your browser to http://localhost:4455/api6/foo and you
+get the response from express via the CERBAS proxy.
+
 The cron manager will run hello function every minute according to CRONTAB
 file included.
 
