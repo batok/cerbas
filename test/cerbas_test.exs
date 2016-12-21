@@ -42,6 +42,22 @@ defmodule CerbasTest do
     )
   end
 
+  test "function from other module 1" do
+    assert(
+     Cerbas.Dispatcher.dispatch({"sum", %{"a" => 1, "b" => 2}, "tom"})
+     ==
+     3
+    )
+  end
+
+  test "function from other module 2" do
+    assert(
+     Cerbas.Dispatcher.dispatch({"sum", %{"a" => "x", "b" => 2}, "tom"})
+     ==
+     {:error, "bad arguments"}
+    )
+  end
+
   test "halt in 5 seconds" do
     assert(
      Cerbas.Dispatcher.dispatch({"halt", %{"delay" => 5000}, "tom"})

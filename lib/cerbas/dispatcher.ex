@@ -39,6 +39,7 @@ defmodule Cerbas.Dispatcher do
       :asyncfunc -> {__MODULE__, nil, nil, true}
       :withargs -> {__MODULE__, :"func_with_arguments", "foo", false}
       :witherror -> {__MODULE__, :"func_with_error", nil, false}
+      :sum -> {Cerbas.General, nil, "a b", false}
       :slow -> {__MODULE__, :"func_slow", nil, false}
       :halt -> {__MODULE__, nil, "delay", true}
       _ -> {:nomatch, nil, nil, false}
