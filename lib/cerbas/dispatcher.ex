@@ -1,4 +1,5 @@
 defmodule Cerbas.Dispatcher do
+  @moduledoc false
   import Cerbas
 
   @api_timeout Application.get_env(:cerbas, :api_timeout)

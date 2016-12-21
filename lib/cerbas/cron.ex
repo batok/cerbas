@@ -1,4 +1,5 @@
 defmodule Cerbas.Cron do
+  @moduledoc false
   import Cerbas
 
   def crontab_entry({entry, request}, counter) do

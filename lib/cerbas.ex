@@ -11,10 +11,12 @@ defmodule Response do
 end
 
 defmodule ForcedReturnError do
+  @moduledoc false
   defexception [:message]
 end
 
 defmodule RequestDataError do
+  @moduledoc false
   defexception [:message]
 end
 

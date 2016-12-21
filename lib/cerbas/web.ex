@@ -1,4 +1,5 @@
 defmodule Cerbas.Web do
+  @moduledoc false
   import Cerbas
   alias Cerbas.Dispatcher
   import ShortMaps
