@@ -1,5 +1,6 @@
 defmodule Cerbas.Web do
   import Cerbas
+  alias Cerbas.Dispatcher
   import ShortMaps
   use Plug.Router
   import Plug.Conn
@@ -72,7 +73,7 @@ defmodule Cerbas.Web do
 
   def apicall(func, args, source, conn) do
     response = 
-    case Cerbas.Dispatcher.dispatch({func, args, source}) do
+    case Dispatcher.dispatch({func, args, source}) do
       {:error, msg} -> %{status: "error", data: msg}
       val -> %{status: "ok", data: val}
       _ -> %{status: "error", data: ""}
@@ -87,8 +88,27 @@ defmodule Cerbas.Web do
   def start_link() do
     :fuse.install(:fuse_server_timeout, {{:standard, 2, 3_000},{:reset, 10_000}})
     :fuse.install(:fuse_server_not_available, {{:standard, 2, 3_000},{:reset, 10_000}})
-    "Web Server and proxy started" |> color_info(:blue)
+    "Web server and proxy started" |> color_info(:blue)
     Plug.Adapters.Cowboy.http(__MODULE__, [], port: 4455)
+  end
+
+  def local_foo(conn) do
+    ~m(var1 var2) = qp(conn)
+    r_json ~m(var1 var2) 
+    rescue
+      e -> 
+        "#{inspect e}" |> color_info(:red)
+        error(conn, "must use var1 and var2")
+  end
+
+  def general_api_handler(conn) do
+    ~m(request) = req_body_map(conn)
+    ~m(func args source) = request
+    apicall(func, args, source, conn)
+    rescue
+      e -> 
+        "#{inspect e}" |> color_info(:red)
+        error(conn, "you have to provide a json body with request, etc")
   end
 
   get "/" do
@@ -99,7 +119,7 @@ defmodule Cerbas.Web do
 
   get "/api/hello" do
     "{\"func\": \"hello\", \"args\": {}, \"source\": \"web\"}" 
-    |> get_request_parts |> Cerbas.Dispatcher.dispatch()
+    |> get_request_parts |> Dispatcher.dispatch()
     conn 
     |> send_resp(200, "HELLO")
   end
@@ -114,10 +134,12 @@ defmodule Cerbas.Web do
 
   match _ do
     rp = conn.request_path
-    remote_ws = 
+    route_match = 
     case conn.method do
       "GET" ->
         case rp do
+          "/api/foo" -> {__MODULE__, :"local_foo"}
+          "/api/general" -> {__MODULE__, :"general_api_handler"}
           "/api2/foo" <> _ -> :pyramid
           "/api3/foo" -> :ror
           "/api4/foo" -> :django
@@ -128,12 +150,17 @@ defmodule Cerbas.Web do
         end
         _ -> nil
     end
-    if is_nil(remote_ws) do
+    if is_nil(route_match) do
       "NOT FOUND" |> color_info(:red)
       conn
       |> send_resp(404, "NOT FOUND")
     else
-      proxy(conn, remote_ws)
+      if is_atom(route_match) do
+        proxy(conn, route_match)
+      else
+        {module, func} = route_match
+        apply(module, func, [conn])
+      end
     end
   end
 
