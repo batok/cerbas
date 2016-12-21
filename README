@@ -8,23 +8,18 @@ facility to dispatch functions instead of scripts.  CERBAS includes a Plug
 module where you can test your functions or customize to your needs.  Also the
 Plug module serves as a proxy to other webservers.
 
-
 Client - Server interaction using CERBAS.
-
 
 1 - Client prepares a request which is a json containing:  
 
 {“func”: “name of an alias to a real function”, “args”:
 json_object_containg_arguments_if_any, “user”: “registered user name”, “source”: “kind of program where the request is generated, i.e. ror which is also registered”}
 
-
 Example 1:
 {“func”: “s3backup”, “args”: {}, “user”: “tom”, “source”: “flask_app”}
 
-
 Example 2 ( with parameters ):
 {“func”: “tablecount”, “args”: {“table”: “users”, “database”, “awesomedb”}, “user”: “peter”, “source”: “ror” }  
-
 
 Example 3 ( with delay in milliseconds before running the task or function ):
 {“func”: “send_a_notification_in_a_minute”, “args”: {}, “user”: “alice”, source:”django_app”, delay= 60000} 
@@ -34,12 +29,9 @@ Example 3 ( with delay in milliseconds before running the task or function ):
 
 A - INCR CERBAS_COUNTER
 
-
 B - GET CERBAS_COUNTER
 
-
 C - Key name is built this way:
-
 
 CERBAS-REQ-[Value of CERBAS_COUNTER zero filled right justified to ten digits]
 
@@ -47,18 +39,13 @@ Example:
 
 CERBAS-REQ-0000000001
 
-
 D - SET Key as in "C" with the value of serialized json request ( see previous examples ). 
-
 
 E - RPUSH CERBAS_QUEUE [ with CERBAS_COUNTER contents, i.e. 1 ]
 
-
 F - If the request doesn’t expect an answer from CERBAS that was it.
 
-
 G - Redis pub-sub channel name built this way:
-
 
 CERBAS-RESPONSE-[Value of number of redis db (1,8)]-[Value of CERBAS_COUNTER
 zero filled right justified to ten digits]    
@@ -73,34 +60,24 @@ H - Client subscribe to this channel waiting for a response from CERBAS ( Server
 
 I - Response has the following json structure
 
-
 {“status”: “ok”, “data”: json_value_or_structure_containing_result}   when ok
 {“status”: “error”, “data”: “error message” } when having errors.
 
-
 What CERBAS server does is reading values from the queue (LPOP) , (GET) ing the value of the key formed with the popped value, deleting the original request ( DELETE) and routing the request to a real elixir function which must return the possible values:
-
 
 json value can be any poison serializable content 
 {:error, “error message”}
 {:noreply}
 
-
 CERBAS will intercept this value an build the appropriate json response that will publish using the right channel in two forms:  raw and compressed via msgpack.  If the content was msgpacked the channel name used will be prefixed by MSGPACK:.
-
 
 Due to concurrent goodies of the erlang vm every request is dispatched in its own process without conflicting or waiting for previous requests.
 
-
 ADVANTAGES of this architecture.
-
 
 1 - A request is easy to do from any programming language with a redis library ( with subscribe capabilities ).
 
-
 2 - Requests are language agnostic ( they are only json values serialized to strings ). Responses ( if any ) are also language agnostic ( they are only json values serialized to strings and optionally compressed as msgpack ). Note: if the client need msgpack compression, the client interface needs a msgpack library.
-
-
 
 This is the elixir function that return the lua script that will be used by the server.
 
@@ -114,11 +91,9 @@ This is the elixir function that return the lua script that will be used by the 
   """
 ( Server make responses via publishing to channels using lua-scripting, sending both compressed and non-compressed data )
 
-
 4 - Requests can be made from web applications and client-server desktop applications.
 
 Example of client code using python (cerbas.py):
-
 
 import redis, sys, json, argparse
 import cPickle as pickle
@@ -174,7 +149,6 @@ def request(func = "dummy", source = "test", user = "test", arguments = None, ms
 import cerbas
 import json
 
-
 def test():
     prod, local = False, True
     cerbas.start(prod, local)
@@ -216,9 +190,7 @@ end
 
 CERBAS also includes a mechanism for dispatching functions by means of a CRON compatible file ( see CRONTAB included ).  Unlike a normal cron dispatcher CERBAS dispatches functions running at the server instead of scripts or programs.
 
-
 CERBAS includes also a Plug process which can be used for any purposes or as a proxy ( WIP ) to other web servers like RoR, Django, Flask, Pyramid, Sinatra just to name a few.
-
 
 To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
 github with hub [brew install hub]:
