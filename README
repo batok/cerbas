@@ -69,7 +69,6 @@ What CERBAS server does is reading values from the queue (LPOP) , (GET) ing the 
 
 json value can be any poison serializable content 
 {:error, “error message”}
-{:noreply}
 
 CERBAS will intercept this value an build the appropriate json response that will publish using the right channel in two forms:  raw and compressed via msgpack.  If the content was msgpacked the channel name used will be prefixed by MSGPACK:.
 
@@ -192,7 +191,9 @@ end
 
 CERBAS also includes a mechanism for dispatching functions by means of a CRON compatible file ( see CRONTAB included ).  Unlike a normal cron dispatcher CERBAS dispatches functions running at the server instead of scripts or programs.
 
-CERBAS includes also a Plug process which can be used for any purposes or as a proxy ( WIP ) to other web servers like RoR, Django, Flask, Pyramid, Sinatra just to name a few.
+CERBAS includes also a Plug process which can be used for any purposes or as a
+proxy ( WIP ) to other web servers like RoR, Django, Flask, Pyramid, Tornado,
+Express just to name a few.
 
 To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
 github with hub [brew install hub]:
@@ -258,10 +259,11 @@ file included.
 
 You can stop CERBAS with ctrl-c
 
-Customize CERBAS to your needs.  This is just a starting point for your API
-Server needs.
+CERBAS is just a starting point for your API Server needs, so feel free to customize it.
 
+IMPORTANT NOTE:  CERBAS is changing every day.
 
+Any questions: look for me at slack elixir's team and/or via twitter : @batok
 
 
 
