@@ -211,7 +211,31 @@ To run the cerbastest.py example you need python 2.7 or + with redis and msgpack
 
 CERBAS uses elixir's registry to handle elixir’s agents needed to work, therefore needs
 at least elixir 1.4-rc .  I have run CERBAS with master version ( 1.5-dev )
-and erlang 19.1 installed with kerl without a hitch. You also need erlang installed (v 18+).
+and erlang 19.2 installed with kerl without a hitch.
+
+You also need erlang installed (v 18+).
+
+To install erlang 19.2 with kerl in macos sierra
+
+First install kerl...
+
+$ mkdir kerl_zone
+$ cd kerl_zone
+$ curl -O https://raw.githubusercontent.com/kerl/kerl/master/kerl
+$ chmod a+x kerl
+
+Then 
+
+$ ./kerl update releases
+$ KERL_CONFIGURE_OPTIONS="--with-ssl=/usr/local/opt/openssl" ./kerl build 19.2
+19.2
+
+$ ./kerl install 19.2 19.2
+
+$ . 19.2/activate
+
+
+To run Cerbas:
 
 
 Clone this repo, cd to cerbas and 
