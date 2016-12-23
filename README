@@ -4,14 +4,15 @@ ___________________________________________________________________
 
 It’s a server engine  written in erlang ecosystem’s elixir language. 
 
-CERBAS Concurrently handles requests made by clients using redis 
+CERBAS concurrently handles requests made by clients using redis 
 ( data structure key value store).
 
 CERBAS reads requests from redis stored like json structures and 
-dispatch then to elixir functions.  The return from that functions is
-delivered to clients by means of redis’ publish subscribe mechanism. 
+dispatch them to elixir functions.  The returned values from those functions
+are delivered to clients by means of redis’ publish subscribe mechanism. 
 
-CERBAS is also a cron like facility to dispatch functions instead of scripts.  
+CERBAS is also a cron like facility to dispatch functions instead of scripts.
+( See CRONTAB file )
 
 CERBAS includes a Plug module where you can test your functions or customize to your needs.  
 
