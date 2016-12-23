@@ -2,10 +2,10 @@
 CERBAS (=C=oncurrent =E=lixir/Erlang =R=edis-backed =A=PI =S=erver).
 ___________________________________________________________________
 
-It’s a server engine  written in erlang ecosystem’s elixir language. 
+It’s a server engine written in erlang ecosystem’s elixir language. 
 
 CERBAS concurrently handles requests made by clients using redis 
-( data structure key value store).
+( data structure in-memory key value store ).
 
 CERBAS reads requests from redis stored like json structures and 
 dispatch them to elixir functions.  The returned values from those functions
@@ -197,11 +197,14 @@ def process_request(func \\ "dummy", source \\ "test", user \\ "test", args \\ n
 end
 
 
-CERBAS also includes a mechanism for dispatching functions by means of a CRON compatible file ( see CRONTAB included ).  Unlike a normal cron dispatcher CERBAS dispatches functions running at the server instead of scripts or programs.
+CERBAS also includes a mechanism for dispatching functions 
+by means of a CRON compatible file ( see CRONTAB included ).  
+Unlike a normal cron dispatcher CERBAS dispatches functions 
+running at the server instead of scripts or programs.
 
 CERBAS includes also a Plug process which can be used for any purposes or as a
 proxy ( WIP ) to other web servers like RoR, Django, Flask, Pyramid, Tornado,
-Express just to name a few.
+Express.
 
 To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
 github with hub [brew install hub]:
@@ -214,7 +217,10 @@ $ make
 then run it:
 $ src/redis-server
 
-To run the cerbastest.py example you need python 2.7 or + with redis and msgpack-python installed with pip ( I recommend using virtualenv for 2.7 or venv for python 3)
+To run the cerbastest.py example you need python 2.7 or + with redis and
+msgpack-python installed with pip ( pip install msgpack-python redis ).
+ 
+( I recommend using virtualenv for python 2.7 or venv for python 3)
 
 
 CERBAS uses elixir's registry to handle elixir’s agents needed to work, therefore needs
