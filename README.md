@@ -1,5 +1,5 @@
 
-CERBAS (=C=oncurrent =E=lixir/Erlang =R=edis-backed =A=PI =S=erver).
+# CERBAS (=C=oncurrent =E=lixir/Erlang =R=edis-backed =A=PI =S=erver).
 ___________________________________________________________________
 
 It’s a server engine written in erlang ecosystem’s elixir language. 
@@ -22,20 +22,30 @@ Client - Server interaction using CERBAS.
 
 1 - Client prepares a request which is json data containing:  
 
+```
 {“func”: “name of an alias to a real function”, “args”:
 json_object_containg_arguments_if_any, “user”: “registered user name”, “source”: “kind of program where the request is generated, i.e. ror which is also registered”}
+```
 
 Example 1:
+
+```
 {“func”: “s3backup”, “args”: {}, “user”: “tom”, “source”: “flask_app”}
+```
 
 Example 2 ( with parameters ):
+
+```
 {“func”: “tablecount”, “args”: {“table”: “users”, “database”, “awesomedb”}, “user”: “peter”, “source”: “ror” }  
+```
 
 Example 3 ( with delay in milliseconds before running the task or function ):
-{“func”: “send_a_notification_in_a_minute”, “args”: {}, “user”: “alice”, source:”django_app”, delay= 60000} 
 
-2 - Steps done by any client in any language connected to redis ( db = 1 [dev], db = 8
-[prod]).
+```
+{“func”: “send_a_notification_in_a_minute”, “args”: {}, “user”: “alice”, source:”django_app”, delay= 60000} 
+```
+
+2 - Steps done by any client in any language connected to redis ( db = 1 [dev], db = 8 [prod]).
 
 A - INCR CERBAS_COUNTER
 
@@ -75,8 +85,11 @@ I - Response has the following json structure
 
 What CERBAS server does is reading values from the queue (LPOP) , (GET) ing the value of the key formed with the popped value, deleting the original request ( DELETE) and routing the request to a real elixir function which must return the possible values:
 
-json value can be any poison serializable content 
+json value can be any poison serializable content
+
+```elixir
 {:error, “error message”}
+````
 
 CERBAS will intercept this value an build the appropriate json response that will publish using the right channel in two forms:  raw and compressed via msgpack.  If the content was msgpacked the channel name used will be prefixed by MSGPACK:.
 
@@ -90,6 +103,7 @@ ADVANTAGES of this architecture.
 
 This is the elixir function that return the lua script that will be used by the server.
 
+```elixir
  defp lua_script_redis() , do: """
   local channel = KEYS[1];
   local msgpack_channel = "msgpack:" .. channel;
@@ -98,12 +112,14 @@ This is the elixir function that return the lua script that will be used by the 
   local mvalue = cmsgpack.pack(cjson.decode(value));
   return redis.call('PUBLISH', msgpack_channel, mvalue);
   """
+```
 ( Server make responses via publishing to channels using lua-scripting, sending both compressed and non-compressed data )
 
 4 - Requests can be made from web applications and client-server desktop applications.
 
 Example of client code using python (cerbas.py):
 
+```python
 import redis, sys, json, argparse
 import cPickle as pickle
 from datetime import datetime
@@ -152,9 +168,11 @@ def request(func = "dummy", source = "test", user = "test", arguments = None, ms
     if msgpack:
         result = json.dumps(mp.unpackb(result))
     return result
+```
 
 (cerbastest.py)
 
+```python
 import cerbas
 import json
 
@@ -169,10 +187,11 @@ def test():
 
 if __name__ == "__main__":
     test()
+```
 
 Example of client code using elixir:
 
-
+```elixir
 def process_request(func \\ "dummy", source \\ "test", user \\ "test", args \\ nil, one_way \\ false) do
     {:ok, client_sub} = Exredis.Sub.start_link
     {:ok, svalue} = command(["INCR", "CERBAS-COUNTER"])
@@ -193,8 +212,8 @@ def process_request(func \\ "dummy", source \\ "test", user \\ "test", args \\ n
       subscribe(client_sub, rk)
       |> decode_response
     end
-
 end
+```
 
 
 CERBAS also includes a mechanism for dispatching functions 
@@ -209,22 +228,25 @@ Express.
 To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
 github with hub [brew install hub]:
 
+```
 $ hub clone antirez/redis
 $ cd redis
 $ make
-
+```
 
 then run it:
+
+```
 $ src/redis-server
+```
 
 To run the cerbastest.py example you need python 2.7 or + with redis and
 msgpack-python installed with pip ( pip install msgpack-python redis ).
  
 ( I recommend using virtualenv for python 2.7 or venv for python 3)
 
-
 CERBAS uses elixir's registry to handle elixir’s agents needed to work, therefore needs
-at least elixir 1.4-rc .  I have run CERBAS with master version ( 1.5-dev )
+at least elixir 1.4-rc .  I have run CERBAS with master version (1.5-dev)
 and erlang 19.2 installed with kerl without a hitch.
 
 You also need erlang installed (v 18+).
@@ -233,13 +255,16 @@ To install erlang 19.2 with kerl in macos sierra
 
 First install kerl...
 
+```
 $ mkdir kerl_zone
 $ cd kerl_zone
 $ curl -O https://raw.githubusercontent.com/kerl/kerl/master/kerl
 $ chmod a+x kerl
+```
 
 Then 
 
+```
 $ ./kerl update releases
 $ KERL_CONFIGURE_OPTIONS="--with-ssl=/usr/local/opt/openssl" ./kerl build 19.2
 19.2
@@ -247,31 +272,34 @@ $ KERL_CONFIGURE_OPTIONS="--with-ssl=/usr/local/opt/openssl" ./kerl build 19.2
 $ ./kerl install 19.2 19.2
 
 $ . 19.2/activate
-
+```
 
 To run Cerbas:
 
-
 Clone this repo, cd to cerbas and 
 
+```
 $ mix deps.get
 
 $ mix run
+```
 
-Once running you can try the cerbastest.py or go to http://localhost:4455/api/hello
+Once running you can try the `cerbastest.py` or go to `http://localhost:4455/api/hello`
 
-The python client code will stop CERBAS calling the "halt" function via redis.
+The python client code will stop CERBAS calling the `halt` function via redis.
 
-There's a tornadoapp.py (python) which runs a tornado based wsgi app which gets its
+There's a `tornadoapp.py` (python) which runs a tornado based wsgi app which gets its
 port from calling the CERBAS api.  If you point your browser to
-http://localhost:4455/api7/foo?a=23&b=54  you get a response with the sum of a
+`http://localhost:4455/api7/foo?a=23&b=54`  you get a response with the sum of a
 and b ( the app uses the CERBAS api to get the result, in this case 77 ).  
 
 To run the tornado
 app you need a python environment with tornado and redis libraries installed ( via pip install
 tornado redis ). After that just
 
+```
 $ python tornadoapp.py
+```
 
 The tornado app must be started after CERBAS, because gets its port from
 CERBAS.
@@ -283,11 +311,16 @@ get the response from node via the CERBAS prox
 There's also an express app.  
 
 You can run it with: 
+
+```
 $ npm i 
+```
 
 and
 
+```
 $ node expressapp.js
+```
 
 Point your browser to http://localhost:4455/api6/foo and you
 get the response from express via the CERBAS proxy.
@@ -302,6 +335,3 @@ CERBAS is just a starting point for your API Server needs, so feel free to custo
 IMPORTANT NOTE:  CERBAS is changing every day.
 
 Any questions: at slack elixir's team and/or via twitter : @batok
-
-
-
