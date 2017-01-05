@@ -28,7 +28,8 @@ defmodule Cerbas.Web do
           %{} |> Poison.encode!
       end
       status = 200
-      var!(conn)
+      conn
+      |> var!()
       |> put_resp_content_type("application/json")
       |> send_resp(status, encoded)
     end
@@ -42,7 +43,7 @@ defmodule Cerbas.Web do
     when is_list(list)
     when is_list(fields) 
     when length(list) == length(fields) do
-    Enum.zip(fields,list) |> Enum.into(%{})
+    fields |> Enum.zip(list) |> Enum.into(%{})
   end 
 
   def list_to_map(list, fields), do: %{}
@@ -241,6 +242,7 @@ defmodule Cerbas.Web do
   end
 
   def proxy_host(server_atom) do
+    server =
     case server_atom do
       :pyramid -> @proxy_target_pyramid 
       :ror -> @proxy_target_ror 
@@ -249,7 +251,8 @@ defmodule Cerbas.Web do
       :express -> @proxy_target_express
       :tornado -> @proxy_target_tornado
       _ -> nil
-    end |> color_info(:yellow)
+    end 
+    server |> color_info(:yellow)
   end
 
 end

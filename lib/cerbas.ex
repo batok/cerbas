@@ -62,7 +62,7 @@ defmodule Cerbas do
       :blue -> color_blue
       :magenta -> color_magenta
       :lightblue -> color_light_blue
-      :lightred-> color_light_red
+      :lightred -> color_light_red
       _ -> ""
     end
     "#{color}#{value}#{color_reset}"
@@ -166,7 +166,7 @@ defmodule Cerbas do
     else
       :timer.sleep @delay_in_every_loop
       spawn_link __MODULE__, :process_request, [n, db]
-      mainloop(n+1, db)
+      mainloop(n + 1, db)
     end
   end
 
@@ -220,6 +220,5 @@ defmodule Cerbas do
       "#{n} #{content}" |> Logger.info
     end
   end
-
 
 end
