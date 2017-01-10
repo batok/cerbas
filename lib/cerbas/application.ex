@@ -2,6 +2,7 @@ defmodule Cerbas.Application do
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
+  @proxy_enabled Application.get_env(:cerbas, :proxy_enabled)
 
   use Application
 
@@ -22,16 +23,19 @@ defmodule Cerbas.Application do
     ]
 
     # Define workers and child supervisors to be supervised
-    children = [
+    w = [
       :poolboy.child_spec(:redix_poolboy,
         pool_redis_opts, redis_connection_params),
        worker(Task, [Cerbas.Cron, :crondispatcher, [cronfile]], id: :cronserver),
-       worker(Cerbas.Web, [])
-
-      #worker(Cerbas.Cron, "CRONTAB")
-      # Starts a worker by calling: Cerbas.Worker.start_link(arg1, arg2, arg3)
-      # worker(Cerbas.Worker, [arg1, arg2, arg3]),
+       #worker(Cerbas.Web, [])
     ]
+
+    children =
+    if @proxy_enabled do
+      w ++ [ worker(Cerbas.Web, []) ]
+    else
+      w
+    end
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
