@@ -60,30 +60,27 @@ defmodule Cerbas.Dispatcher do
         "Invalid arguments for func #{func}" |> color_info(:red) 
         {:error, "invalid arguments"}
       else 
-        if async do
-          #spawn_link(fn -> apply(module1, fun1, params) end)
-          pid = spawn_link(module1, fun1, params) 
-          "Spawning #{inspect pid}" |> color_info(:yellow)
-          ""
-        else
-          task = Task.async(module1, fun1, params)
-          #receive do
-          #  {_, msg} -> 
-          #    "#{inspect(msg)}" |> color_info(:yellow)
-          #    msg
-          #  _ -> {:error, "strange error"}
-          #after 
-          #  @api_timeout -> {:error, "timeout"}
-          #end
-          case Task.yield(task, @api_timeout) do
-            {:ok, val} -> 
-              "#{inspect val}" |> color_info(:yellow)
-              val
-            _ ->
-              Task.shutdown(task)
-              {:error, "timeout"}
-          end
+        if fun1 in (apply(module1, :module_info, [:exports]) |> Keyword.keys()) do 
+          if async do
+            pid = spawn_link(module1, fun1, params) 
+            "Spawning #{inspect pid}" |> color_info(:yellow)
+            ""
+          else
+            task = Task.async(module1, fun1, params)
+            case Task.yield(task, @api_timeout) do
+              {:ok, val} -> 
+                "#{inspect val}" |> color_info(:yellow)
+                val
+              _ ->
+                Task.shutdown(task)
+                {:error, "timeout"}
+            end
 
+          end
+        else
+          fu = Atom.to_string(fun1) 
+          "Invalid function {fu}" |> color_info(:red) 
+          {:error, "invalid function"}
         end
       end
     else
