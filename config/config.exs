@@ -25,6 +25,7 @@ use Mix.Config
      config :cerbas, proxy_target_pyramid: "http://127.0.0.1:6543"
      config :cerbas, proxy_target_tornado: "http://127.0.0.1:8888"
      config :cerbas, proxy_target_express: "http://127.0.0.1:3000"
+     config :cerbas, proxy_target_sinatra: "http://localhost:9494"
      config :cerbas, proxy_port: 4455
      config :cerbas, delay_in_every_loop: 200
      config :cerbas, api_timeout: 5000

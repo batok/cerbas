@@ -15,6 +15,7 @@ defmodule Cerbas.Web do
   @proxy_target_express Application.get_env(:cerbas, :proxy_target_express)
   @proxy_target_django Application.get_env(:cerbas, :proxy_target_django)
   @proxy_target_tornado Application.get_env(:cerbas, :proxy_target_tornado)
+  @proxy_target_sinatra Application.get_env(:cerbas, :proxy_target_sinatra)
   @proxy_port Application.get_env(:cerbas, :proxy_port)
 
   defmacro r_json(j) do
@@ -155,6 +156,7 @@ defmodule Cerbas.Web do
           "/api5/foo" -> :flask
           "/api6/foo" -> :express
           "/api7/foo" -> :tornado
+          "/api8/foo" -> :sinatra
           _ -> nil
         end
         _ -> nil
@@ -220,7 +222,7 @@ defmodule Cerbas.Web do
 
   defp header_conversions(headers, backend \\ :pyramid) do
     case backend do
-      val when val in [:pyramid, :flask, :tornado, :express] -> 
+      val when val in [:pyramid, :flask, :tornado, :express, :sinatra] -> 
         headers = List.keydelete(headers, "Server", 0)
         headers = List.keydelete(headers, "Content-Length", 0)
         headers ++ 
@@ -256,6 +258,7 @@ defmodule Cerbas.Web do
       :django -> @proxy_target_django
       :express -> @proxy_target_express
       :tornado -> @proxy_target_tornado
+      :sinatra -> @proxy_target_sinatra
       _ -> nil
     end 
     server |> color_info(:yellow)
