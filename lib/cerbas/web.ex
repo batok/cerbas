@@ -88,10 +88,16 @@ defmodule Cerbas.Web do
         r_json %{status: "error", data: "rescued"}
   end
 
+  def every_n_seconds() do
+    "Web proxy and plug server is running :)" |> color_info(:green)
+    :timer.sleep 5000
+    every_n_seconds()
+  end
+
   def start_link() do
+    spawn __MODULE__, :every_n_seconds, []
     :fuse.install(:fuse_server_timeout, {{:standard, 2, 3_000},{:reset, 10_000}})
     :fuse.install(:fuse_server_not_available, {{:standard, 2, 3_000},{:reset, 10_000}})
-    "Web server and proxy started" |> color_info(:blue)
     Plug.Adapters.Cowboy.http(__MODULE__, [], port: @proxy_port)
   end
 
