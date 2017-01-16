@@ -26,7 +26,8 @@ defmodule Cerbas.Application do
     w = [
       :poolboy.child_spec(:redix_poolboy,
         pool_redis_opts, redis_connection_params),
-       worker(Task, [Cerbas.Cron, :crondispatcher, [cronfile]], id: :cronserver),
+      worker(Cerbas, []),
+      worker(Task, [Cerbas.Cron, :crondispatcher, [cronfile]], id: :cronserver),
        #worker(Cerbas.Web, [])
     ]
 
@@ -41,6 +42,7 @@ defmodule Cerbas.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Cerbas.Supervisor]
     Supervisor.start_link(children, opts)
-    Cerbas.init
+    #Cerbas.init
+    {:ok, self()}
   end
 end

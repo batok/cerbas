@@ -31,7 +31,7 @@ defmodule Cerbas do
     {:via, Registry, {Registry.Cerbas, name}}
   end
 
-  def init() do
+  def start_link() do
     {:ok, _} = Registry.start_link(:unique, Registry.Cerbas)
     if from_mix(), do: get_version() |> color_me(:lightblue) 
     Agent.start_link(fn -> false end, name: reg_tuple("halt"))
@@ -41,7 +41,6 @@ defmodule Cerbas do
     "CERBAS ... will stop at loop number #{@stop_at_loop_number}" 
     |> color_info(:yellow)
     mainloop(1, db)
-    {:ok, self()}
   end
 
   def color_reset , do: "\x1b[0m"
