@@ -83,14 +83,25 @@ defmodule Cerbas do
     |> String.rjust(zeroes, ?0)
   end
 
-  defp lua_script_redis() , do: """
+  defp lua_script_redis() do 
+    """
     local channel = KEYS[1];
     local msgpack_channel = "MSGPACK:" .. channel;
     local value = ARGV[1];
-    redis.call('PUBLISH', channel, value);
-    local mvalue = cmsgpack.pack(cjson.decode(value));
-    return redis.call('PUBLISH', msgpack_channel, mvalue);
     """
+    <>
+    if @only_raw_response do
+      """
+      return redis.call('PUBLISH', channel, value);
+      """
+    else
+      """
+      redis.call('PUBLISH', channel, value);
+      local mvalue = cmsgpack.pack(cjson.decode(value));
+      return redis.call('PUBLISH', msgpack_channel, mvalue);
+      """
+    end
+  end
 
   def command(cmd) do
     :poolboy.transaction(:redix_poolboy, &Redix.command(&1, cmd))
@@ -156,6 +167,7 @@ defmodule Cerbas do
   end
 
   @delay_in_every_loop Application.get_env(:cerbas, :delay_in_every_loop) 
+  @only_raw_response Application.get_env(:cerbas, :only_raw_response)
 
   def mainloop(0, db) , do: "Stopped" |> color_info(:cyan)
 

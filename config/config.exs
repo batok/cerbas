@@ -21,6 +21,7 @@ use Mix.Config
 #     config :logger, level: :info
      config :logger, :console, format: "\ncerbas $time $metadata[$level] $levelpad$message"
      config :cerbas, proxy_enabled: true
+     config :cerbas, only_raw_response: false # if true msgpack is not handled also
      config :cerbas, proxy_target_flask: "http://127.0.0.1:5000"
      config :cerbas, proxy_target_pyramid: "http://127.0.0.1:6543"
      config :cerbas, proxy_target_tornado: "http://127.0.0.1:8888"
