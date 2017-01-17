@@ -83,11 +83,12 @@ defmodule Cerbas do
     |> String.rjust(zeroes, ?0)
   end
 
-  defp lua_script_redis() do 
+  defp lua_script_publisher_redis() do 
     """
     local channel = KEYS[1];
     local msgpack_channel = "MSGPACK:" .. channel;
     local value = ARGV[1];
+    redis.log(redis.LOG_WARNING, "Publishing to CERBAS client");
     """
     <>
     if @only_raw_response do
@@ -101,6 +102,18 @@ defmodule Cerbas do
       return redis.call('PUBLISH', msgpack_channel, mvalue);
       """
     end
+  end
+
+  defp lua_script_cache_verifier_redis() do
+    """
+    redis.log(redis.LOG_WARNING, 'Cerbas Cache verifying...' .. KEYS[1]);
+    local content = redis.call('get', KEYS[1]);
+    redis.log(redis.LOG_WARNING, 'Content... ' .. content);
+    local val = redis.sha1hex('CERBASREQ' .. content );
+    local result = 'CERBASREQ_' .. val;
+    redis.log(redis.LOG_WARNING, 'New Cerbas Key for caching' .. result);
+    return result;
+    """
   end
 
   def command(cmd) do
@@ -215,6 +228,8 @@ defmodule Cerbas do
     if is_number(content) do
       key = rkey_name(content)
       {channel, msgpack_channel} = channels(content, db)
+      {:ok, cache_key} = command(["EVAL", lua_script_cache_verifier_redis, 1, key, 0])
+      "Caching key #{cache_key}" |> color_info(:yellow)
       {:ok, request} = command(["GET", key])
       command(["DELETE", key])
       data =
@@ -225,7 +240,7 @@ defmodule Cerbas do
       end 
       unless is_nil(data) do
         contents = Poison.encode!(data)
-        command(["EVAL", lua_script_redis, 1, channel, contents])
+        command(["EVAL", lua_script_publisher_redis, 1, channel, contents])
       end
     else
       "#{n} #{content}" |> Logger.info
