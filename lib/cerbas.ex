@@ -265,7 +265,7 @@ defmodule Cerbas do
       unless is_nil(data) do
         if cache_seconds > 0 do
           command(["SET", cache_key, Poison.encode!(data)])
-          command(["EXPIRES", cache_key, cache_seconds])
+          command(["EXPIRE", cache_key, cache_seconds])
           "updating cache" |> color_info(:yellow)
         end
         contents = Poison.encode!(data)
