@@ -85,34 +85,50 @@ defmodule Cerbas do
 
   defp lua_script_publisher_redis() do 
     """
-    local channel = KEYS[1];
-    local msgpack_channel = "MSGPACK:" .. channel;
-    local value = ARGV[1];
-    redis.log(redis.LOG_WARNING, "Publishing to CERBAS client");
+    local channel = KEYS[1]
+    local msgpack_channel = "MSGPACK:" .. channel
+    local value = ARGV[1]
+    redis.log(redis.LOG_WARNING, "Publishing to CERBAS client")
     """
     <>
     if @only_raw_response do
       """
-      return redis.call('PUBLISH', channel, value);
+      return redis.call('PUBLISH', channel, value)
       """
     else
       """
-      redis.call('PUBLISH', channel, value);
-      local mvalue = cmsgpack.pack(cjson.decode(value));
-      return redis.call('PUBLISH', msgpack_channel, mvalue);
+      redis.call('PUBLISH', channel, value)
+      local mvalue = cmsgpack.pack(cjson.decode(value))
+      return redis.call('PUBLISH', msgpack_channel, mvalue)
       """
     end
   end
 
   defp lua_script_cache_verifier_redis() do
     """
-    redis.log(redis.LOG_WARNING, 'Cerbas Cache verifying...' .. KEYS[1]);
-    local content = redis.call('get', KEYS[1]);
-    redis.log(redis.LOG_WARNING, 'Content... ' .. content);
-    local val = redis.sha1hex('CERBASREQ' .. content );
-    local result = 'CERBASREQ_' .. val;
-    redis.log(redis.LOG_WARNING, 'New Cerbas Key for caching' .. result);
-    return result;
+    redis.log(redis.LOG_WARNING, 'Cerbas Cache verifying...' .. KEYS[1])
+    local content = redis.call('get', KEYS[1])
+    redis.log(redis.LOG_WARNING, 'Content... ' .. content)
+    local val = redis.sha1hex(content)
+    local result = 'CERBASREQ_' .. val
+    redis.log(redis.LOG_WARNING, 'New cerbas key for caching ' .. result)
+    return result
+    """
+  end
+
+  defp lua_script_cache_value_redis() do
+    """
+    local key = KEYS[1]
+    local exists = redis.call('exists', key)
+    local content
+    if exists > 0 then
+      redis.log(redis.LOG_WARNING, key .. ' key found with cached value!' )
+      content = redis.call('get', key)
+    else 
+      redis.log(redis.LOG_WARNING, key .. ' key not found with cached value' )
+      content = ''
+    end
+    return content
     """
   end
 
@@ -155,7 +171,7 @@ defmodule Cerbas do
     "#{System.version}/#{erlang}"
   end
 
-  def get_request_parts(request) do
+  def get_request_parts(request, cache_key) do
     req = Poison.decode!(request, as: %Request{}) 
     if from_mix do
       "API Request #{inspect req}" |> color_info(:yellow)
@@ -168,15 +184,20 @@ defmodule Cerbas do
           :timer.sleep(delay) 
           "After delay" |> color_info(:green)
         end
-        {func, args, source}
-      %Request{func: func, args: args, source: source} -> {func, args, source}
+        {func, args, source, {cache_key}}
+      %Request{func: func, args: args, source: source} -> {func, args, source, {cache_key}}
       _ ->
         "invalid request" |> color_info(:red)
-        {"invalidrequest", "invalid", "invalid"}
+        {"invalidrequest", "invalid", "invalid", {"invalid"}}
     end
     rescue 
       e ->  "invalid request" |> color_info(:red)
-            {"invalidrequest", "invalid", "invalid"}
+            {"invalidrequest", "invalid", "invalid", {"invalid"}}
+  end
+
+  def get_cached_value(key) do
+      {:ok, cached_value} = command(["EVAL", lua_script_cache_value_redis, 1, key, 0])
+      cached_value
   end
 
   @delay_in_every_loop Application.get_env(:cerbas, :delay_in_every_loop) 
@@ -232,18 +253,28 @@ defmodule Cerbas do
       "Caching key #{cache_key}" |> color_info(:yellow)
       {:ok, request} = command(["GET", key])
       command(["DELETE", key])
+      req = request |> get_request_parts(cache_key)
+      cache_seconds = req |> elem(0) |> String.to_atom |> Cerbas.Dispatcher.cache_seconds
+      "cache seconds for #{elem(req,0)} #{cache_seconds}" |> color_info(:yellow)
       data =
-      case request |> get_request_parts |> Cerbas.Dispatcher.dispatch do
+      case req |> Cerbas.Dispatcher.dispatch do
         {:error, msg} -> %Response{status: "error", data: msg}
         val -> %Response{status: "ok", data: val}
         _ -> nil 
       end 
       unless is_nil(data) do
+        if cache_seconds > 0 do
+          command(["SET", cache_key, Poison.encode!(data)])
+          command(["EXPIRES", cache_key, cache_seconds])
+          "updating cache" |> color_info(:yellow)
+        end
         contents = Poison.encode!(data)
         command(["EVAL", lua_script_publisher_redis, 1, channel, contents])
       end
     else
-      "#{n} #{content}" |> Logger.info
+      if rem(n, 5) == 0 do
+        "#{n} #{content}" |> Logger.info
+      end
     end
   end
 

@@ -15,6 +15,7 @@ def test():
     cerbas.start(prod, local)
     source = "cerbastest"
     print request(func="hello", user="foo", source=source, msgpack=True)
+    print request(func="hello", user="foo", source=source)
     print request(func="slow", user="foo", source=source)
     print request(func="halt", user="foo", source=source, arguments=dict(delay=1000))
 

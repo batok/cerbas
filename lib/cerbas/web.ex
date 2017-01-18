@@ -137,7 +137,7 @@ defmodule Cerbas.Web do
 
   get "/api/hello" do
     "{\"func\": \"hello\", \"args\": {}, \"source\": \"web\"}" 
-    |> get_request_parts |> Dispatcher.dispatch()
+    |> get_request_parts("") |> Dispatcher.dispatch()
     conn 
     |> send_resp(200, "HELLO")
   end

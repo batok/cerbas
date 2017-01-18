@@ -6,24 +6,24 @@ defmodule Cerbas.Dispatcher do
   @api_valid_sources Application.get_env(:cerbas, :api_valid_sources)
   @api_valid_users Application.get_env(:cerbas, :api_valid_sources)
 
-  def dispatch({func, args, source, user}) 
+  def dispatch({func, args, source, user, {cache_key}}) 
     when is_binary(func)
     when is_map(args)
     when is_binary(source)
     when is_binary(user) do
     if source in @api_valid_users do
-      dispatch({func, args, source})
+      dispatch({func, args, source, {cache_key}})
     else
       {:error, "cerbas authorization - invalid user"}
     end
   end
 
-  def dispatch({func, args, source}) 
+  def dispatch({func, args, source, {cache_key}}) 
     when is_binary(func)
     when is_map(args)
     when is_binary(source) do
     if source in @api_valid_sources do
-      dispatcher({func, args})
+      dispatcher({func, args, cache_key})
     else
       {:error, "cerbas authorization - invalid source"}
     end
@@ -31,21 +31,44 @@ defmodule Cerbas.Dispatcher do
 
   def dispatch(_whatever) , do: {:error, "bad call"}
 
-  defp dispatcher({func, args}) do
-    atom = String.to_atom(func)
-    {module, fun, par, async} =
+  defp mapping(atom) do
     case atom do
-      :hello -> {__MODULE__, :"hello_world", nil, false}
-      :asyncfunc -> {__MODULE__, nil, nil, true}
-      :withargs -> {__MODULE__, :"func_with_arguments", "foo", false}
-      :witherror -> {__MODULE__, :"func_with_error", nil, false}
-      :sum -> {Cerbas.General, nil, "a b", false}
-      :proxiedhostport -> {Cerbas.General, :"get_proxied_host_port", "server", false}
-      :slow -> {__MODULE__, :"func_slow", nil, false}
-      :halt -> {__MODULE__, nil, "delay", true}
-      _ -> {:nomatch, nil, nil, false}
+      :hello -> {__MODULE__, :"hello_world", nil, false, 20}
+      :asyncfunc -> {__MODULE__, nil, nil, true, 0}
+      :withargs -> {__MODULE__, :"func_with_arguments", "foo", false, 0}
+      :witherror -> {__MODULE__, :"func_with_error", nil, false, 0}
+      :sum -> {Cerbas.General, nil, "a b", false, 0}
+      :proxiedhostport -> {Cerbas.General, :"get_proxied_host_port", "server", false, 0}
+      :slow -> {__MODULE__, :"func_slow", nil, false, 0}
+      :halt -> {__MODULE__, nil, "delay", true, 0}
+      _ -> {:nomatch, nil, nil, false, 0}
     end
+  end
+
+  def cache_seconds(atom) when is_atom(atom) do
+    mapping(atom) |> elem(4)
+  end
+
+  defp dispatcher({func, args, cache_key}) do
+    atom = String.to_atom(func)
+    {module, fun, par, async, cache} = mapping(atom)
     if module != :nomatch do
+      cached_content =
+      if cache > 0 and async == false do
+        case get_cached_value(cache_key) do
+          "" -> ""
+          v -> 
+            decoded = Poison.decode!(v)
+            case decoded do
+              %Response{status: "ok", data: content} -> 
+                "Cache content found!" |> color_info(:yellow) 
+                content
+              _ -> ""
+            end
+        end        
+      else
+        ""
+      end
       module1 = module
       fun1 = if fun == nil, do: atom, else: fun
       params = 
@@ -66,14 +89,18 @@ defmodule Cerbas.Dispatcher do
             "Spawning #{inspect pid}" |> color_info(:yellow)
             ""
           else
-            task = Task.async(module1, fun1, params)
-            case Task.yield(task, @api_timeout) do
-              {:ok, val} -> 
-                "#{inspect val}" |> color_info(:yellow)
-                val
-              _ ->
-                Task.shutdown(task)
-                {:error, "timeout"}
+            if cached_content == "" do
+              task = Task.async(module1, fun1, params)
+              case Task.yield(task, @api_timeout) do
+                {:ok, val} -> 
+                  "#{inspect val}" |> color_info(:yellow)
+                  val
+                _ ->
+                  Task.shutdown(task)
+                  {:error, "timeout"}
+              end
+            else
+              cached_content
             end
 
           end
