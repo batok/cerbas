@@ -1,7 +1,7 @@
 import redis
 import json
 from datetime import datetime
-import msgpack as mp
+import umsgpack as mp
 PREFIX = "CERBAS"
 r = None
 

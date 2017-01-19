@@ -123,7 +123,7 @@ Example of client code using python (cerbas.py):
 import redis, sys, json, argparse
 import cPickle as pickle
 from datetime import datetime
-import msgpack as mp
+import umsgpack as mp
 PREFIX = "CERBAS"
 r = None
 def start(prod=False, local=False):
@@ -188,9 +188,10 @@ def test():
     prod, local = False, True
     cerbas.start(prod, local)
     source = "cerbastest"
-    print request(func="hello", user="foo", source=source)
-    print request(func="slow", user="foo", source=source)
-    print request(func="halt", user="foo", source=source, arguments=dict(delay=1000))
+    print( request(func="hello", user="foo", source=source, msgpack=True))
+    print( request(func="hello", user="foo", source=source))
+    print( request(func="slow", user="foo", source=source))
+    print( request(func="halt", user="foo", source=source, arguments=dict(delay=1000)))
 
 if __name__ == "__main__":
     test()
@@ -293,6 +294,19 @@ $ mix run
 
 Once running you can try the `cerbastest.py` or go to `http://localhost:4455/api/hello`
 
+
+Python 2.7 or Python 3.6 can be used to run cerbastest.py
+
+If using Python 3 install libraries in a virtual env
+
+$ python3 -m venv mypath
+$ pip install redis u-msgpack-python
+
+and run it ...
+
+$ python3 cerbastest.py
+
+
 The python client code will stop CERBAS calling the `halt` function via redis.
 
 There's a `tornadoapp.py` (python) which runs a tornado based wsgi app which gets its
@@ -302,7 +316,7 @@ and b ( the app uses the CERBAS api to get the result, in this case 77 ).
 
 To run the tornado
 app you need a python environment with tornado and redis libraries installed ( via pip install
-tornado redis ). After that just
+tornado redis u-msgpack-python). After that just
 
 ```
 $ python tornadoapp.py
