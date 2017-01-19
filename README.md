@@ -4,7 +4,7 @@ ___________________________________________________________________
 
 It’s a server engine written in erlang ecosystem’s elixir language. 
 
-CERBAS concurrently handles requests made by clients using redis 
+CERBAS concurrently dispatches requests made by clients using redis 
 ( data structure in-memory key value store ).
 
 CERBAS reads requests from redis stored like json structures and 
@@ -104,28 +104,42 @@ ADVANTAGES of this architecture.
 This is the elixir function that return the lua script that will be used by the server.
 
 ```elixir
- defp lua_script_redis() , do: """
-  local channel = KEYS[1];
-  local msgpack_channel = "msgpack:" .. channel;
-  local value = ARGV[1];
-  redis.call('PUBLISH', channel, value);
-  local mvalue = cmsgpack.pack(cjson.decode(value));
-  return redis.call('PUBLISH', msgpack_channel, mvalue);
-  """
+  defp lua_script_publisher_redis() do 
+    """
+    local channel = KEYS[1]
+    local msgpack_channel = "MSGPACK:" .. channel
+    local value = ARGV[1]
+    redis.log(redis.LOG_WARNING, "Publishing to CERBAS client")
+    """
+    <>
+    if @only_raw_response do
+      """
+      return redis.call('PUBLISH', channel, value)
+      """
+    else
+      """
+      redis.call('PUBLISH', channel, value)
+      local mvalue = cmsgpack.pack(cjson.decode(value))
+      return redis.call('PUBLISH', msgpack_channel, mvalue)
+      """
+    end
+  end
 ```
-( Server make responses via publishing to channels using lua-scripting, sending both compressed and non-compressed data )
+( Server generates responses via publishing to channels using lua-scripting, sending both compressed and non-compressed data )
 
 4 - Requests can be made from web applications and client-server desktop applications.
 
 Example of client code using python (cerbas.py):
 
 ```python
-import redis, sys, json, argparse
-import cPickle as pickle
+import redis
+import json
 from datetime import datetime
 import umsgpack as mp
 PREFIX = "CERBAS"
 r = None
+
+
 def start(prod=False, local=False):
     global r
     global db
@@ -137,37 +151,47 @@ def start(prod=False, local=False):
 
     if prod:
         db = 8
-    r = redis.Redis(host = host, port = 6379, db = db )
+    r = redis.Redis(host=host, port=6379, db=db)
 
-def request(func = "dummy", source = "test", user = "test", arguments = None, msgpack = False):
-    PREFIX = "CERBAS"
+
+def request(func="dummy", source="test", user="test", arguments=None, msgpack=False):
     k = r.incr("{}-COUNTER".format(PREFIX))
-    nk = "{}-REQ-{:010d}".format(PREFIX, k)
-    rk = "{}-RESPONSE-{}-{:010d}".format(PREFIX, get_database_number(), k)
-    d = dict(func = func, source = source, user = user)
-    if arguments and isinstance( arguments, dict):
-            d["args"] = arguments
+    nk = "{}-REQUEST-{:010d}".format(PREFIX, k)
+    rk = "{}-RESPONSE-{}-{:010d}".format(PREFIX, db, k)
+    d = dict(func=func, source=source, user=user)
+    if arguments and isinstance(arguments, dict):
+        d["args"] = arguments
     if msgpack:
         rk = "MSGPACK:{}".format(rk)
 
-
-    msg = json.dumps( d )
+    msg = json.dumps(d)
     r.set(nk, msg)
-    r.rpush("{}-QUEUE".format(PREFIX),k)
+    r.rpush("{}-QUEUE".format(PREFIX), k)
     ps = r.pubsub()
     ps.subscribe(rk)
 
-
     result = ""
     for x in ps.listen():
-            if x and x.get("type") == "message":
-                    result = x.get("data")
-                    ps.unsubscribe(x.get("channel"))
-
+        if x and x.get("type") == "message":
+            result = x.get("data")
+            ps.unsubscribe(x.get("channel"))
 
     if msgpack:
         result = json.dumps(mp.unpackb(result))
     return result
+
+
+def request_without_response(func="dummy", source="test", user="test", arguments=None):
+    k = r.incr("{}-COUNTER".format(PREFIX))
+    nk = "{}-REQUEST-{:010d}".format(PREFIX, k)
+    d = dict(func=func, source=source, user=user)
+    if arguments and isinstance(arguments, dict):
+        d["args"] = arguments
+
+    msg = json.dumps(d)
+    r.set(nk, msg)
+    r.rpush("{}-QUEUE".format(PREFIX), k)
+    return
 ```
 
 (cerbastest.py)
@@ -177,12 +201,13 @@ import cerbas
 import json
 
 
-def request(func, user, source, arguments = None):
+def request(func, user, source, arguments=None, msgpack=False):
     if arguments:
-        v = json.loads(cerbas.request(func=func, user=user, source=source, arguments=arguments))
+        v = json.loads(cerbas.request(func=func, user=user, source=source, arguments=arguments, msgpack=msgpack))
     else:
-        v = json.loads(cerbas.request(func=func, user=user, source=source))
+        v = json.loads(cerbas.request(func=func, user=user, source=source, msgpack=msgpack))
     return v
+
 
 def test():
     prod, local = False, True
@@ -229,11 +254,13 @@ by means of a CRON compatible file ( see CRONTAB included ).
 Unlike a normal cron dispatcher CERBAS dispatches functions 
 running at the server instead of scripts or programs.
 
-CERBAS includes also a Plug process which can be used for any purposes or as a
-proxy ( WIP ) to other web servers like RoR, Django, Flask, Pyramid, Tornado,
-Express.
+CERBAS also includes a Plug process which can be used for any purposes or as a
+proxy to other web servers like RoR, Django, Flask, Pyramid, Tornado,
+Express, Sinatra.
 
-To run CERBAS you need redis.  One way to install redis from mac os is to clone it from
+To run CERBAS you need redis.  
+
+One way to install redis from mac os is to clone it from
 github with hub [brew install hub]:
 
 ```
@@ -345,6 +372,19 @@ $ node expressapp.js
 
 Point your browser to http://localhost:4455/api6/foo and you
 get the response from express via the CERBAS proxy.
+
+There's also a sinatra app.  
+
+Install sinatra first...
+$ gem install sinatra
+
+Then run app with...
+$ruby sinatra_app.rb
+
+Sinatra app will run at port 9494 
+
+Point your browser to http://localhost:4455/api8/foo and you
+get the response from sinatra via the CERBAS proxy.
 
 The cron manager will run hello function every minute according to CRONTAB
 file included.
