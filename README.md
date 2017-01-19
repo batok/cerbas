@@ -249,7 +249,7 @@ $ src/redis-server
 ```
 
 To run the cerbastest.py example you need python 2.7 or + with redis and
-msgpack-python installed with pip ( pip install msgpack-python redis ).
+u-msgpack-python installed with pip ( pip install u-msgpack-python redis ).
  
 ( I recommend using virtualenv for python 2.7 or venv for python 3)
 
