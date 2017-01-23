@@ -1,29 +1,43 @@
+# CERBAS
 
-# CERBAS (=C=oncurrent =E=lixir/Erlang =R=edis-backed =A=PI =S=erver).
-___________________________________________________________________
+Cerbas let languages other than elixir to call functions written in elixir. 
 
-It’s a server engine written in erlang ecosystem’s elixir language. 
+Cerbas uses redis as the "broker".  
 
-CERBAS concurrently dispatches requests made by clients using redis 
-( data structure in-memory key value store ).
+A client code, written for example in python, prepares a json compatible request which stores in redis.  
 
-CERBAS reads requests from redis stored like json structures and 
-dispatch them to elixir functions.  The returned values from those functions
-are delivered to clients by means of redis’ publish subscribe mechanism. 
+The json is fetched by cerbas server and routed to the configured elixir function.  
 
-CERBAS is also a cron like facility to dispatch functions instead of scripts.
-( See CRONTAB file )
+The returned value from the function is serialized to a json response that is dispatched to the client by means of redis' publish capability.
 
-CERBAS includes a Plug module where you can test your functions or customize to your needs.  
+Cerbas can: 
 
-Also the Plug module serves as a proxy to other webservers.
+* handle a timeout for executing functions ( default to 5 seconds).  
+
+* compress published responses with msgpack ( optional ).
+
+* cache values for specific functions.
+
+* run scheduled functions by means of a CRON compatible file.
+
+
+Use cases:
+
+* Scripts or code from any language which at some point need call one or more functions developed with elixir/erlang.
+
+* CRON like execution of elixir functions
+
+
+Currently only a python driver for cerbas is included but write an specific driver for any other language is easy if follow these:
+
+The language must communicate with redis and serialize to and from a json like structure.  Both are pretty supported in any language.  The only caveat is that the redis communication  must support "subscribe".
 
 Client - Server interaction using CERBAS.
 
 1 - Client prepares a request which is json data containing:  
 
 ```
-{“func”: “name of an alias to a real function”, “args”:
+{“func”: “name of an alias name to a real function”, “args”:
 json_object_containg_arguments_if_any, “user”: “registered user name”, “source”: “kind of program where the request is generated, i.e. ror which is also registered”}
 ```
 
@@ -95,304 +109,5 @@ CERBAS will intercept this value an build the appropriate json response that wil
 
 Due to concurrent goodies of the erlang vm every request is dispatched in its own process without conflicting or waiting for previous requests.
 
-ADVANTAGES of this architecture.
 
-1 - A request is easy to do from any programming language with a redis library ( with subscribe capabilities ).
 
-2 - Requests are language agnostic ( they are only json values serialized to strings ). Responses ( if any ) are also language agnostic ( they are only json values serialized to strings and optionally compressed as msgpack ). Note: if the client need msgpack compression, the client interface needs a msgpack library.
-
-This is the elixir function that return the lua script that will be used by the server.
-
-```elixir
-  defp lua_script_publisher_redis() do 
-    """
-    local channel = KEYS[1]
-    local msgpack_channel = "MSGPACK:" .. channel
-    local value = ARGV[1]
-    redis.log(redis.LOG_WARNING, "Publishing to CERBAS client")
-    """
-    <>
-    if @only_raw_response do
-      """
-      return redis.call('PUBLISH', channel, value)
-      """
-    else
-      """
-      redis.call('PUBLISH', channel, value)
-      local mvalue = cmsgpack.pack(cjson.decode(value))
-      return redis.call('PUBLISH', msgpack_channel, mvalue)
-      """
-    end
-  end
-```
-( Server generates responses via publishing to channels using lua-scripting, sending both compressed and non-compressed data )
-
-4 - Requests can be made from web applications and client-server desktop applications.
-
-Example of client code using python (cerbas.py):
-
-```python
-import redis
-import json
-from datetime import datetime
-import umsgpack as mp
-PREFIX = "CERBAS"
-r = None
-
-
-def start(prod=False, local=False):
-    global r
-    global db
-    host = "10.0.1.124"
-    if local:
-        host = "127.0.0.1"
-
-    db = 1
-
-    if prod:
-        db = 8
-    r = redis.Redis(host=host, port=6379, db=db)
-
-
-def request(func="dummy", source="test", user="test", arguments=None, msgpack=False):
-    k = r.incr("{}-COUNTER".format(PREFIX))
-    nk = "{}-REQUEST-{:010d}".format(PREFIX, k)
-    rk = "{}-RESPONSE-{}-{:010d}".format(PREFIX, db, k)
-    d = dict(func=func, source=source, user=user)
-    if arguments and isinstance(arguments, dict):
-        d["args"] = arguments
-    if msgpack:
-        rk = "MSGPACK:{}".format(rk)
-
-    msg = json.dumps(d)
-    r.set(nk, msg)
-    r.rpush("{}-QUEUE".format(PREFIX), k)
-    ps = r.pubsub()
-    ps.subscribe(rk)
-
-    result = ""
-    for x in ps.listen():
-        if x and x.get("type") == "message":
-            result = x.get("data")
-            ps.unsubscribe(x.get("channel"))
-
-    if msgpack:
-        result = json.dumps(mp.unpackb(result))
-    return result
-
-
-def request_without_response(func="dummy", source="test", user="test", arguments=None):
-    k = r.incr("{}-COUNTER".format(PREFIX))
-    nk = "{}-REQUEST-{:010d}".format(PREFIX, k)
-    d = dict(func=func, source=source, user=user)
-    if arguments and isinstance(arguments, dict):
-        d["args"] = arguments
-
-    msg = json.dumps(d)
-    r.set(nk, msg)
-    r.rpush("{}-QUEUE".format(PREFIX), k)
-    return
-```
-
-(cerbastest.py)
-
-```python
-import cerbas
-import json
-
-
-def request(func, user, source, arguments=None, msgpack=False):
-    if arguments:
-        v = json.loads(cerbas.request(func=func, user=user, source=source, arguments=arguments, msgpack=msgpack))
-    else:
-        v = json.loads(cerbas.request(func=func, user=user, source=source, msgpack=msgpack))
-    return v
-
-
-def test():
-    prod, local = False, True
-    cerbas.start(prod, local)
-    source = "cerbastest"
-    print( request(func="hello", user="foo", source=source, msgpack=True))
-    print( request(func="hello", user="foo", source=source))
-    print( request(func="slow", user="foo", source=source))
-    print( request(func="halt", user="foo", source=source, arguments=dict(delay=1000)))
-
-if __name__ == "__main__":
-    test()
-```
-
-Example of client code using elixir:
-
-```elixir
-def process_request(func \\ "dummy", source \\ "test", user \\ "test", args \\ nil, one_way \\ false) do
-    {:ok, client_sub} = Exredis.Sub.start_link
-    {:ok, svalue} = command(["INCR", "CERBAS-COUNTER"])
-    nk = "CERBAS-REQ-#{zformat(svalue,10)}"
-    rk = "CERBAS-RESPONSE-#{zformat(svalue,10)}"
-
-    unless is_map(args) do
-      args = nil
-    end
-
-    d = Poison.encode!(%Request{func: func, args: args, source: source, user: user})
-    command(["SET", nk, d])
-    command(["RPUSH","CERBAS-QUEUE", svalue])
-
-    if one_way do
-      nil
-    else
-      subscribe(client_sub, rk)
-      |> decode_response
-    end
-end
-```
-
-
-CERBAS also includes a mechanism for dispatching functions 
-by means of a CRON compatible file ( see CRONTAB included ).  
-Unlike a normal cron dispatcher CERBAS dispatches functions 
-running at the server instead of scripts or programs.
-
-CERBAS also includes a Plug process which can be used for any purposes or as a
-proxy to other web servers like RoR, Django, Flask, Pyramid, Tornado,
-Express, Sinatra.
-
-To run CERBAS you need redis.  
-
-One way to install redis from mac os is to clone it from
-github with hub [brew install hub]:
-
-```
-$ hub clone antirez/redis
-$ cd redis
-$ make
-```
-
-then run it:
-
-```
-$ src/redis-server
-```
-
-To run the cerbastest.py example you need python 2.7 or + with redis and
-u-msgpack-python installed with pip ( pip install u-msgpack-python redis ).
- 
-( I recommend using virtualenv for python 2.7 or venv for python 3)
-
-CERBAS uses elixir's registry to handle elixir’s agents needed to work, therefore needs
-at least elixir 1.4-rc .  I have run CERBAS with master version (1.5-dev)
-and erlang 19.2 installed with kerl without a hitch.
-
-You also need erlang installed (v 18+).
-
-To install erlang 19.2 with kerl in macos sierra
-
-First install kerl...
-
-```
-$ mkdir kerl_zone
-$ cd kerl_zone
-$ curl -O https://raw.githubusercontent.com/kerl/kerl/master/kerl
-$ chmod a+x kerl
-```
-
-Then 
-
-```
-$ ./kerl update releases
-$ KERL_CONFIGURE_OPTIONS="--with-ssl=/usr/local/opt/openssl" ./kerl build 19.2
-19.2
-
-$ ./kerl install 19.2 19.2
-
-$ . 19.2/activate
-```
-
-To run Cerbas:
-
-Clone this repo, cd to cerbas and 
-
-```
-$ mix deps.get
-
-$ mix run
-```
-
-Once running you can try the `cerbastest.py` or go to `http://localhost:4455/api/hello`
-
-
-Python 2.7 or Python 3.6 can be used to run cerbastest.py
-
-If using Python 3 install libraries in a virtual env
-
-$ python3 -m venv mypath
-$ pip install redis u-msgpack-python
-
-and run it ...
-
-$ python3 cerbastest.py
-
-
-The python client code will stop CERBAS calling the `halt` function via redis.
-
-There's a `tornadoapp.py` (python) which runs a tornado based wsgi app which gets its
-port from calling the CERBAS api.  If you point your browser to
-`http://localhost:4455/api7/foo?a=23&b=54`  you get a response with the sum of a
-and b ( the app uses the CERBAS api to get the result, in this case 77 ).  
-
-To run the tornado
-app you need a python environment with tornado and redis libraries installed ( via pip install
-tornado redis u-msgpack-python). After that just
-
-```
-$ python tornadoapp.py
-```
-
-The tornado app must be started after CERBAS, because gets its port from
-CERBAS.
-
-There's also an express app.  You can run it with npm i and node
-espressapp.js.  Point your browser to http://localhost:4455/api6/foo and you
-get the response from node via the CERBAS prox
-
-There's also an express app.  
-
-You can run it with: 
-
-```
-$ npm i 
-```
-
-and
-
-```
-$ node expressapp.js
-```
-
-Point your browser to http://localhost:4455/api6/foo and you
-get the response from express via the CERBAS proxy.
-
-There's also a sinatra app.  
-
-Install sinatra first...
-$ gem install sinatra
-
-Then run app with...
-$ruby sinatra_app.rb
-
-Sinatra app will run at port 9494 
-
-Point your browser to http://localhost:4455/api8/foo and you
-get the response from sinatra via the CERBAS proxy.
-
-The cron manager will run hello function every minute according to CRONTAB
-file included.
-
-You can stop CERBAS with ctrl-c
-
-CERBAS is just a starting point for your API Server needs, so feel free to customize it.
-
-IMPORTANT NOTE:  CERBAS is changing every day.
-
-Any questions: at slack elixir's team and/or via twitter : @batok
