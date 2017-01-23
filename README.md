@@ -10,11 +10,13 @@ The json is fetched by cerbas server and routed to the configured elixir functio
 
 The returned value from the function is serialized to a json response that is dispatched to the client by means of redis' publish capability.
 
+<div style="background-color:rgba(0, 0, 0, 0.0470588); text-align:center; vertical-align: middle; padding:40px 0;">
 
 Client -> json-request -> cerbas driver -> redis -> listen in channel X
 
 Cerbas Server read incoming requests and dispatches to configured elixir functions, publish result to channel X.
 
+</div>
 
 To run cerbas install and ...
 
@@ -24,7 +26,7 @@ $ redis-server
 ```
 
 Open other terminal window and install
-install elixir 1.4 
+elixir 1.4 
 
 and ...
 
