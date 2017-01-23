@@ -13,12 +13,15 @@ The returned value from the function is serialized to a json response that is di
 
 To run cerbas install and ...
 
-run redis.
+run redis...
 ```
 $ redis-server
 ```
 
-install elixir 1.4 and ...
+Open other terminal window and install
+install elixir 1.4 
+
+and ...
 
 clone this repo
 
@@ -39,7 +42,7 @@ Open other terminal window and install python's stuff...
 $ cd cerbas
 $ python3 -m venv py3env
 $ source py3env/bin/activate
-$ pip install u-msgpack-python, redis
+$ pip install -r requirements.txt
 ```
 
 and run the python example...
@@ -125,7 +128,7 @@ F - If the request doesn’t expect an answer from CERBAS that was it.
 
 G - Redis pub-sub channel name built this way:
 
-CERBAS-RESPONSE-[Value of number of redis db (1,8)]-[Value of CERBAS_COUNTER
+CERBAS-RESPONSE-[Value of number of redis db (1 for dev or 8 for production)]-[Value of CERBAS_COUNTER
 zero filled right justified to ten digits]    
 
 Example:
