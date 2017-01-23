@@ -1,6 +1,6 @@
 # CERBAS
 
-Cerbas let languages other than elixir to call functions written in elixir. 
+Cerbas let languages other than elixir call functions written in elixir. 
 
 Cerbas uses redis as the "broker".  
 
