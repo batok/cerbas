@@ -4,11 +4,16 @@ Cerbas let languages other than elixir call functions written in elixir.
 
 Cerbas uses redis as the "broker".  
 
-A client code, written for example in python, prepares a json compatible request which stores in redis.  
+A client code, for example in python, prepares a json compatible request which stores in redis.  
 
 The json is fetched by cerbas server and routed to the configured elixir function.  
 
 The returned value from the function is serialized to a json response that is dispatched to the client by means of redis' publish capability.
+
+
+Client -> json-request -> cerbas driver -> redis -> listen in channel X
+
+Cerbas Server read incoming requests and dispatches to configured elixir functions, publish result to channel X.
 
 
 To run cerbas install and ...
@@ -51,8 +56,9 @@ and run the python example...
 $ python3 cerbastest.py 
 ```
 
-This will run some elixir functions, the last one called will stop cerbas itself.
+cerbastest.py make some requests to redis, which are routed to elixir function by CERBAS Server.
 
+the last request "halt" will stop CERBAS Server.
 
 ==================================================================
 
@@ -74,6 +80,21 @@ Use cases:
 * CRON like execution of elixir functions
 
 
+Plus:
+
+Cerbas includes a Plug Web Server which also serve as proxy to other web apps.  Four examples are included.
+
+To run the tornado app ...
+
+```
+$ python3 tornadoapp.py
+```
+
+Open any browser and go to localhost:4455/api7/foo
+
+Tornado will receive the http request and will route to the tornado web app.  
+
+===
 
 The language must communicate with redis and serialize to and from a json like structure.  Both are pretty supported in any language.  The only caveat is that the redis communication  must support "subscribe".
 
