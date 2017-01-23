@@ -92,7 +92,7 @@ $ python3 tornadoapp.py
 
 Open any browser and go to localhost:4455/api7/foo
 
-Tornado will receive the http request and will route to the tornado web app.  
+Cerbas' plug server will receive the http request and will route it to tornado web app.  
 
 ===
 
