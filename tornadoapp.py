@@ -45,5 +45,5 @@ if __name__ == "__main__":
         application.listen(port)
         tornado.ioloop.IOLoop.current().start()
     else:
-        print "port not available"
+        print("port not available")
 
