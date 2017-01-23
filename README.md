@@ -14,9 +14,10 @@ The returned value from the function is serialized to a json response that is di
 
 Client -> json-request -> cerbas driver -> redis -> listen in channel X
 
+</div>
+
 Cerbas Server read incoming requests and dispatches to configured elixir functions, publish result to channel X.
 
-</div>
 
 To run cerbas install and ...
 
