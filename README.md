@@ -15,11 +15,17 @@ To run cerbas install and ...
 
 run redis.
 ```
-$redis-server
+$ redis-server
 ```
 
 install elixir 1.4 and ...
+
 clone this repo
+
+```
+$ git clone https://github.com/batok/cerbas.git
+```
+
 ```
 $ cd cerbas
 $ mix deps.get
@@ -28,22 +34,24 @@ $ mix run
 
 
 Open other terminal window and install python's stuff...
+
 ```
-$cd cerbas
-$python3 -m venv py3env
-$. py3env/bin/activate
-$pip install u-msgpack-python, redis
+$ cd cerbas
+$ python3 -m venv py3env
+$ source py3env/bin/activate
+$ pip install u-msgpack-python, redis
 ```
 
 and run the python example...
+
 ```
-$python3 cerbastest.py 
+$ python3 cerbastest.py 
 ```
 
 This will run some elixir functions, the last one called will stop cerbas itself.
 
 
-
+==================================================================
 
 Cerbas can: 
 
