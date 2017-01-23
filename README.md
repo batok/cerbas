@@ -10,6 +10,41 @@ The json is fetched by cerbas server and routed to the configured elixir functio
 
 The returned value from the function is serialized to a json response that is dispatched to the client by means of redis' publish capability.
 
+
+To run cerbas install and ...
+
+run redis.
+```
+$redis-server
+```
+
+install elixir 1.4 and ...
+clone this repo
+```
+$ cd cerbas
+$ mix deps.get
+$ mix run
+```
+
+
+Open other terminal window and install python's stuff...
+```
+$cd cerbas
+$python3 -m venv py3env
+$. py3env/bin/activate
+$pip install u-msgpack-python, redis
+```
+
+and run the python example...
+```
+$python3 cerbastest.py 
+```
+
+This will run some elixir functions, the last one called will stop cerbas itself.
+
+
+
+
 Cerbas can: 
 
 * handle a timeout for executing functions ( default to 5 seconds).  
@@ -28,9 +63,10 @@ Use cases:
 * CRON like execution of elixir functions
 
 
-Currently only a python driver for cerbas is included but write an specific driver for any other language is easy if follow these:
 
 The language must communicate with redis and serialize to and from a json like structure.  Both are pretty supported in any language.  The only caveat is that the redis communication  must support "subscribe".
+
+Currently only a python driver for cerbas is included but write an specific driver for any other language is easy if follow these:
 
 Client - Server interaction using CERBAS.
 
