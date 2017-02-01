@@ -56,7 +56,7 @@ and run the python example...
 $ python3 cerbastest.py 
 ```
 
-cerbastest.py make some requests to redis, which are routed to elixir function by CERBAS Server.
+cerbastest.py make some requests to redis, which are routed to elixir functions by CERBAS Server.
 
 the last request "halt" will stop CERBAS Server.
 
