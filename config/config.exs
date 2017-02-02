@@ -32,6 +32,7 @@ use Mix.Config
      config :cerbas, api_timeout: 5000
      config :cerbas, api_valid_sources: ["cerbastest", "foo", "bar", "web", "tom"]
      config :cerbas, api_valid_users: ["tom", "foo"]
+     config :sasl, :sasl_error_logger, false
 #     
 #
 

@@ -15,6 +15,7 @@ defmodule Cerbas.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
+    # :application.set_env(:fuse, :monitor, true)
     [extra_applications: [:logger, :poison, :poolboy, :redix, :hackney, :chronos, :fuse],
      mod: {Cerbas.Application, []}]
   end

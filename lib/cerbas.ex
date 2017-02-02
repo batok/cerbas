@@ -35,8 +35,10 @@ defmodule Cerbas do
     {:ok, _} = Registry.start_link(:unique, Registry.Cerbas)
     if from_mix(), do: get_version() |> color_me(:lightblue) 
     Agent.start_link(fn -> false end, name: reg_tuple("halt"))
-    command(["SET", "CERBAS-COUNTER", 0])
-    command(["DELETE", "CERBAS-QUEUE"])
+    pipeline([
+      ["SET", "CERBAS-COUNTER", 0],
+      ["DELETE", "CERBAS-QUEUE"]
+    ])
     {_,_,db} = get_redis_conf()
     "CERBAS ... will stop at loop number #{@stop_at_loop_number}" 
     |> color_info(:yellow)
@@ -168,7 +170,7 @@ defmodule Cerbas do
 
   def get_version do
     erlang = :erlang.system_info(:otp_release)
-    "#{System.version}/#{erlang}"
+    "#{System.version}//#{erlang}"
   end
 
   def get_request_parts(request, cache_key) do
