@@ -1,6 +1,4 @@
 defmodule Cerbas.Application do
-  # See http://elixir-lang.org/docs/stable/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
   @proxy_enabled Application.get_env(:cerbas, :proxy_enabled)
   import Cerbas, only: [color_info: 2]
@@ -23,29 +21,24 @@ defmodule Cerbas.Application do
       database: redis_db 
     ]
 
-    # Define workers and child supervisors to be supervised
     w = [
       :poolboy.child_spec(:redix_poolboy,
         pool_redis_opts, redis_connection_params),
       worker(Task, [Cerbas.Cron, :crondispatcher, [cronfile]], id: :cronserver)
-      #worker(Cerbas, [], id: :apiserver)
     ]
 
     children =
     if @proxy_enabled do
       "web server added to supervised items" |> color_info(:green)
-      w ++ [ worker(Cerbas.Web, [], id: :proxyserver), worker(Cerbas, [], id: :apiserver) ]
+      w ++ [worker(Cerbas.Web, [], id: :proxyserver), worker(Cerbas, [], id: :apiserver)]
     else
       "web server NOT added to supervised items" |> color_info(:green)
-      w ++ [ worker(Cerbas, [], id: :apiserver) ]
+      w ++ [worker(Cerbas, [], id: :apiserver)]
     end
     "supervised items #{length children}" |> color_info(:yellow)
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Cerbas.Supervisor]
     Supervisor.start_link(children, opts)
-    #Cerbas.init
     {:ok, self()}
   end
 end

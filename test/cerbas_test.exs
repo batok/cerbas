@@ -14,7 +14,7 @@ defmodule CerbasTest do
 
   test "hellox world" do
     assert(
-     Cerbas.Dispatcher.dispatch({"hellox", "foo", "bar"})
+     Cerbas.Dispatcher.dispatch({"hellox", "foo", "bar", {""}})
      ==
      {:error, "Undefined function"}
     )
@@ -22,7 +22,7 @@ defmodule CerbasTest do
 
   test "hello world" do
     assert(
-     Cerbas.Dispatcher.dispatch({"hello", %{}, "tom"})
+     Cerbas.Dispatcher.dispatch({"hello", %{}, "tom", {""}})
      ==
      "hello world!"
     )
