@@ -1,1 +1,2 @@
 * * * * * | {"func": "hello", "args": {}, "source": "foo" }
+* * * * * | {"func": "echo", "args": {"message": "yes, sir"}, "source": "foo" }

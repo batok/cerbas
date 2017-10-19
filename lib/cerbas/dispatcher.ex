@@ -5,6 +5,7 @@ defmodule Cerbas.Dispatcher do
   @api_timeout Application.get_env(:cerbas, :api_timeout)
   @api_valid_sources Application.get_env(:cerbas, :api_valid_sources)
   @api_valid_users Application.get_env(:cerbas, :api_valid_sources)
+  @echo Application.get_env(:cerbas, :echo)
 
   def dispatch({func, args, source, user, {cache_key}}) 
     when is_binary(func)
@@ -32,6 +33,7 @@ defmodule Cerbas.Dispatcher do
   def dispatch(_whatever) , do: {:error, "bad call"}
 
   defp mapping(atom) do
+    "mapping #{atom}" |> color_info(:yellow)
     case atom do
       :hello -> {__MODULE__, :"hello_world", nil, false, 20}
       :asyncfunc -> {__MODULE__, nil, nil, true, 0}
@@ -40,6 +42,7 @@ defmodule Cerbas.Dispatcher do
       :sum -> {Cerbas.General, nil, "a b", false, 0}
       :proxiedhostport -> {Cerbas.General, :"get_proxied_host_port", "server", false, 0}
       :slow -> {__MODULE__, :"func_slow", nil, false, 0}
+      :echo -> @echo
       :halt -> {__MODULE__, nil, "delay", true, 0}
       _ -> {:nomatch, nil, nil, false, 0}
     end

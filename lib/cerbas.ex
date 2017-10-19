@@ -26,6 +26,9 @@ defmodule Cerbas do
   """
 
   require Logger
+  @stop_at_loop_number Application.get_env(:cerbas, :stop_at_loop_number)
+  @delay_in_every_loop Application.get_env(:cerbas, :delay_in_every_loop) 
+  @only_raw_response Application.get_env(:cerbas, :only_raw_response)
 
   def reg_tuple(name) do
     {:via, Registry, {Registry.Cerbas, name}}
@@ -57,16 +60,22 @@ defmodule Cerbas do
   def color_me(value, atom \\ nil) do
     color = 
     case atom do
-      :red -> color_red
-      :green -> color_green
-      :yellow -> color_yellow
-      :blue -> color_blue
-      :magenta -> color_magenta
-      :lightblue -> color_light_blue
-      :lightred -> color_light_red
+      :red -> color_red()
+      :green -> color_green()
+      :yellow -> color_yellow()
+      :blue -> color_blue()
+      :magenta -> color_magenta()
+      :lightblue -> color_light_blue()
+      :lightred -> color_light_red()
       _ -> ""
     end
-    "#{color}#{value}#{color_reset}"
+    end_color =
+    if color === "" do
+        ""
+    else
+        color_reset()
+    end
+    "#{color}#{value}#{end_color}"
   end
 
   def color_info(color, msg) when is_atom(color) do
@@ -176,6 +185,8 @@ defmodule Cerbas do
   def get_request_parts(request, cache_key) do
     req = Poison.decode!(request, as: %Request{}) 
     if from_mix do
+      "From MIX API Request #{inspect req}" |> color_info(:yellow)
+    else
       "API Request #{inspect req}" |> color_info(:yellow)
     end
     case req do
@@ -198,12 +209,9 @@ defmodule Cerbas do
   end
 
   def get_cached_value(key) do
-      {:ok, cached_value} = command(["EVAL", lua_script_cache_value_redis, 1, key, 0])
+      {:ok, cached_value} = command(["EVAL", lua_script_cache_value_redis(), 1, key, 0])
       cached_value
   end
-
-  @delay_in_every_loop Application.get_env(:cerbas, :delay_in_every_loop) 
-  @only_raw_response Application.get_env(:cerbas, :only_raw_response)
 
   def mainloop(0, db) , do: "Stopped" |> color_info(:cyan)
 
@@ -221,8 +229,6 @@ defmodule Cerbas do
     {redis_host, redis_port, redis_db} = 
       Application.get_env(:cerbas, :redis_conf)
   end
-
-  @stop_at_loop_number Application.get_env(:cerbas, :stop_at_loop_number)
 
   def process_request(n, db) when n > (@stop_at_loop_number - 1) do
     if n == @stop_at_loop_number do 
@@ -251,7 +257,7 @@ defmodule Cerbas do
     if is_number(content) do
       key = rkey_name(content)
       {channel, msgpack_channel} = channels(content, db)
-      {:ok, cache_key} = command(["EVAL", lua_script_cache_verifier_redis, 1, key, 0])
+      {:ok, cache_key} = command(["EVAL", lua_script_cache_verifier_redis(), 1, key, 0])
       "Caching key #{cache_key}" |> color_info(:yellow)
       {:ok, request} = command(["GET", key])
       command(["DELETE", key])
@@ -271,11 +277,11 @@ defmodule Cerbas do
           "updating cache" |> color_info(:yellow)
         end
         contents = Poison.encode!(data)
-        command(["EVAL", lua_script_publisher_redis, 1, channel, contents])
+        command(["EVAL", lua_script_publisher_redis(), 1, channel, contents])
       end
     else
       if rem(n, 5) == 0 do
-        "#{n} #{content}" |> Logger.info
+        "#{n} #{content}" |> color_info(:none)
       end
     end
   end

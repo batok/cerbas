@@ -1,6 +1,7 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
+alias Cerbas.General
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
@@ -32,6 +33,7 @@ use Mix.Config
      config :cerbas, api_timeout: 5000
      config :cerbas, api_valid_sources: ["cerbastest", "foo", "bar", "web", "tom"]
      config :cerbas, api_valid_users: ["tom", "foo"]
+     config :cerbas, echo: {General, :echo, "message", false, 0}
      config :sasl, :sasl_error_logger, false
 #     
 #

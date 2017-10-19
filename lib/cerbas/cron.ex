@@ -31,12 +31,12 @@ defmodule Cerbas.Cron do
 
       case Agent.get(reg_tuple("cronmap"), fn val -> Map.get(val, key) end) do
         nil -> Agent.update(reg_tuple("cronmap"), fn val -> Map.put(val,key,true) end)
+          "match crontab entry at #{inspect now}" |> color_info(:yellow)
           case request |> get_request_parts("") |> Cerbas.Dispatcher.dispatch do
             {:error, _} -> "error" |> color_info(:red) 
               :error
             val -> "ok" |> color_info(:green)
               :ok
-            _ -> :error
           end 
         _ -> :skipped
       end

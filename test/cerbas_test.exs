@@ -14,7 +14,7 @@ defmodule CerbasTest do
 
   test "hellox world" do
     assert(
-     Cerbas.Dispatcher.dispatch({"hellox", "foo", "bar", {""}})
+     Cerbas.Dispatcher.dispatch({"hellox", "foo", "bar", {nil}})
      ==
      {:error, "Undefined function"}
     )
@@ -22,7 +22,7 @@ defmodule CerbasTest do
 
   test "hello world" do
     assert(
-     Cerbas.Dispatcher.dispatch({"hello", %{}, "tom", {""}})
+     Cerbas.Dispatcher.dispatch({"hello", %{}, "tom", {nil}})
      ==
      "hello world!"
     )
@@ -30,7 +30,7 @@ defmodule CerbasTest do
 
   test "async func" do
     assert(
-     Cerbas.Dispatcher.dispatch({"asyncfunc", %{}, "tom"})
+     Cerbas.Dispatcher.dispatch({"asyncfunc", %{}, "tom", {nil}})
      ==
      ""
     )
@@ -38,7 +38,7 @@ defmodule CerbasTest do
 
   test "function with arguments" do
     assert(
-     Cerbas.Dispatcher.dispatch({"withargs", %{"foo" => "bar"}, "tom"})
+     Cerbas.Dispatcher.dispatch({"withargs", %{"foo" => "bar"}, "tom", {nil}})
      ==
      "bar"
     )
@@ -46,7 +46,7 @@ defmodule CerbasTest do
 
   test "function with error" do
     assert(
-     Cerbas.Dispatcher.dispatch({"witherror", %{}, "tom"})
+     Cerbas.Dispatcher.dispatch({"witherror", %{}, "tom", {nil}})
      ==
      {:error, "unexpected error"}
     )
@@ -54,7 +54,7 @@ defmodule CerbasTest do
 
   test "function from other module 1" do
     assert(
-     Cerbas.Dispatcher.dispatch({"sum", %{"a" => 1, "b" => 2}, "tom"})
+     Cerbas.Dispatcher.dispatch({"sum", %{"a" => 1, "b" => 2}, "tom", {nil}})
      ==
      3
     )
@@ -62,7 +62,7 @@ defmodule CerbasTest do
 
   test "function from other module 2" do
     assert(
-     Cerbas.Dispatcher.dispatch({"sum", %{"a" => "x", "b" => 2}, "tom"})
+     Cerbas.Dispatcher.dispatch({"sum", %{"a" => "x", "b" => 2}, "tom", {nil}})
      ==
      {:error, "bad arguments"}
     )
@@ -70,7 +70,7 @@ defmodule CerbasTest do
 
   test "function proxiedhostport" do
     assert(
-     Cerbas.Dispatcher.dispatch({"proxiedhostport", %{"server" => "tornado"}, "tom"})
+     Cerbas.Dispatcher.dispatch({"proxiedhostport", %{"server" => "tornado"}, "tom", {nil}})
      ==
      get_port()
     )
@@ -78,14 +78,10 @@ defmodule CerbasTest do
 
   test "halt in 5 seconds" do
     assert(
-     Cerbas.Dispatcher.dispatch({"halt", %{"delay" => 5000}, "tom"})
+     Cerbas.Dispatcher.dispatch({"halt", %{"delay" => 5000}, "tom", {nil}})
      ==
      ""
     )
   end
 
-  test "wait " do
-    :timer.sleep 6
-    assert 1 == 1
-  end
 end

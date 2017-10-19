@@ -20,4 +20,6 @@ defmodule Cerbas.General do
         {:error, "bad conversions"}
 
   end  
+
+  def echo(message), do: message |> color_info(:yellow)
 end
